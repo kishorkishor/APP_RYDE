@@ -4,14 +4,19 @@ import { T } from '@/src/theme/tokens';
 import { Button } from '@/src/components/ui';
 import { useAuthStore } from '@/src/store/useAuthStore';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 
 export default function LocationPermissionScreen() {
   const router = useRouter();
   const setLocationPermission = useAuthStore((s) => s.setLocationPermission);
 
   const handleAllow = async () => {
-    // In production: request expo-location permission here
-    setLocationPermission(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      setLocationPermission(status === 'granted');
+    } catch {
+      setLocationPermission(false);
+    }
     router.replace('/(tabs)/home');
   };
 

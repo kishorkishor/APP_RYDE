@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { T } from '@/src/theme/tokens';
-import { Button, Avatar, StarRating, InfoRow, Divider } from '@/src/components/ui';
-import { SAMPLE_DRIVER } from '@/src/data/sampleData';
+import { Button, Avatar, StarRating, InfoRow } from '@/src/components/ui';
 import { useRideStore } from '@/src/store/useRideStore';
 import { Ionicons } from '@expo/vector-icons';
 import { databases, databaseId, COLLECTIONS } from '@/src/services/appwrite';
@@ -11,9 +10,11 @@ import { databases, databaseId, COLLECTIONS } from '@/src/services/appwrite';
 export default function CompletedScreen() {
   const router = useRouter();
   const [rating, setRating] = useState(5);
-  const { selectedRide, activeRide, durationMinutes, distanceKm } = useRideStore();
+  const { selectedRide, activeRide, durationMinutes, distanceKm, driver } = useRideStore();
   const resetRide = useRideStore((s) => s.resetRide);
-  const d = SAMPLE_DRIVER;
+
+  const driverName = driver?.name || 'Your driver';
+  const driverInitials = driver?.initials || driverName.charAt(0).toUpperCase();
 
   const handleDone = async () => {
     if (activeRide?.id) {
@@ -22,7 +23,7 @@ export default function CompletedScreen() {
           databaseId,
           collectionId: COLLECTIONS.RIDES,
           documentId: activeRide.id,
-          data: { status: 'completed' },
+          data: { status: 'completed', adminStatus: 'completed' },
         });
       } catch (error) {
         console.error('Failed to mark ride completed', error);
@@ -34,7 +35,6 @@ export default function CompletedScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Success header */}
       <View style={styles.header}>
         <View style={styles.checkCircle}>
           <Ionicons name="checkmark" size={32} color={T.green} />
@@ -43,27 +43,23 @@ export default function CompletedScreen() {
         <Text style={styles.subtitle}>Thank you for riding with RYDE</Text>
       </View>
 
-      {/* Trip summary */}
       <View style={styles.summaryCard}>
-        <InfoRow label="Ride type" value={selectedRide?.name || 'Swift Go'} />
+        <InfoRow label="Ride type" value={selectedRide?.name || 'Premium'} />
         <InfoRow label="Duration" value={`${durationMinutes || 0} min`} style={{ marginTop: 12 }} />
         <InfoRow label="Distance" value={`${distanceKm || 0} km`} style={{ marginTop: 12 }} />
       </View>
 
-      {/* Rate driver */}
       <View style={styles.rateSection}>
         <Text style={styles.rateLabel}>Rate your driver</Text>
         <View style={styles.driverRow}>
-          <Avatar initials={d.initials} bg={d.avatarBg!} size={48} photoUrl={d.photoUrl} />
+          <Avatar initials={driverInitials} bg={driver?.avatarBg || '#1E293B'} size={48} photoUrl={driver?.photoUrl} />
           <View>
-            <Text style={styles.driverName}>{d.name}</Text>
-            <Text style={styles.driverVehicle}>{d.vehicle}</Text>
+            <Text style={styles.driverName}>{driverName}</Text>
+            <Text style={styles.driverVehicle}>{driver?.vehicle || 'Vehicle'}</Text>
           </View>
         </View>
         <StarRating rating={rating} size={32} interactive onChange={setRating} />
       </View>
-
-
 
       <View style={styles.cta}>
         <Button variant="primary" size="lg" fullWidth onPress={handleDone}>

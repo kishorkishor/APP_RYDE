@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { T, shadows } from '@/src/theme/tokens';
 import { Avatar, StatusPill, ContactRow, Button, AddressRoute } from '@/src/components/ui';
-import { SAMPLE_DRIVER } from '@/src/data/sampleData';
 import { useRideStore } from '@/src/store/useRideStore';
 import { Ionicons } from '@expo/vector-icons';
 import VeloMap from '@/src/components/map/VeloMap';
 import { subscribeToDriverLocation, subscribeToRide } from '@/src/services/realtime';
+import { databases, databaseId, COLLECTIONS } from '@/src/services/appwrite';
 import type { DriverLocationRecord } from '@/src/types';
 
 export default function TrackingScreen() {
@@ -17,9 +17,9 @@ export default function TrackingScreen() {
   const activeRide = useRideStore((s) => s.activeRide);
   const driver = useRideStore((s) => s.driver);
   const setDriver = useRideStore((s) => s.setDriver);
+  const resetRide = useRideStore((s) => s.resetRide);
   const routeGeoJSON = useRideStore((s) => s.routeGeoJSON);
   const durationMinutes = useRideStore((s) => s.durationMinutes);
-  const d = driver || SAMPLE_DRIVER;
   const [elapsed, setElapsed] = useState(0);
   const [driverLocation, setDriverLocation] = useState<DriverLocationRecord | null>(null);
 
@@ -28,24 +28,63 @@ export default function TrackingScreen() {
     return () => clearInterval(interval);
   }, []);
 
+  // Realtime ride subscription
   useEffect(() => {
     if (!activeRide?.id) return;
     return subscribeToRide(activeRide.id, setDriver);
   }, [activeRide?.id, setDriver]);
 
+  // Polling fallback — detect cancellation/completion every 15s
   useEffect(() => {
-    if (!d.id) return;
-    return subscribeToDriverLocation(d.id, setDriverLocation);
-  }, [d.id]);
+    if (!activeRide?.id) return;
+    const interval = setInterval(async () => {
+      try {
+        const ride = await databases.getDocument(databaseId, COLLECTIONS.RIDES, activeRide.id);
+        if (ride.status === 'cancelled') {
+          resetRide();
+          router.replace('/(tabs)/home');
+        } else if (ride.status === 'completed' || ride.adminStatus === 'completed' || ride.driverProgress === 'completed') {
+          router.replace('/(ride)/completed');
+        }
+      } catch { /* ignore */ }
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [activeRide?.id, resetRide, router]);
+
+  // Driver location subscription
+  useEffect(() => {
+    if (!driver?.id) return;
+    return subscribeToDriverLocation(driver.id, setDriverLocation);
+  }, [driver?.id]);
+
+  const handleSOS = useCallback(() => {
+    Alert.alert(
+      'Emergency SOS',
+      'Do you need emergency assistance?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Call Emergency (999)',
+          style: 'destructive',
+          onPress: () => Linking.openURL('tel:999'),
+        },
+        {
+          text: 'Call RYDE Support',
+          onPress: () => Linking.openURL('tel:+966500000000'),
+        },
+      ],
+    );
+  }, []);
 
   const mins = Math.floor(elapsed / 60);
   const secs = elapsed % 60;
+  const driverName = driver?.name || 'Driver';
+  const driverInitials = driver?.initials || driverName.charAt(0).toUpperCase();
 
   return (
     <View style={styles.container}>
-      {/* Map */}
       <View style={styles.mapArea}>
-        <VeloMap 
+        <VeloMap
           style={StyleSheet.absoluteFillObject}
           pickupCoordinate={pickup?.longitude && pickup?.latitude ? [pickup.longitude, pickup.latitude] : undefined}
           destinationCoordinate={destination?.longitude && destination?.latitude ? [destination.longitude, destination.latitude] : undefined}
@@ -54,14 +93,13 @@ export default function TrackingScreen() {
         />
         <View style={styles.topOverlay}>
           <StatusPill variant="blue">Ride in progress</StatusPill>
-          <TouchableOpacity style={styles.sosBtn} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.sosBtn} activeOpacity={0.7} onPress={handleSOS}>
             <Ionicons name="shield-outline" size={16} color={T.red} />
             <Text style={{ fontSize: T.font.sm, fontWeight: '700', color: T.red }}>SOS</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Bottom sheet */}
       <View style={styles.sheet}>
         <View style={styles.handle} />
         <View style={styles.timerRow}>
@@ -75,14 +113,13 @@ export default function TrackingScreen() {
           </View>
         </View>
 
-        <AddressRoute from={pickup?.label || 'Midtown Manhattan'} to={destination?.label || 'Destination'} style={{ marginVertical: 16 }} />
+        <AddressRoute from={pickup?.label || 'Pickup'} to={destination?.label || 'Destination'} style={{ marginVertical: 16 }} />
 
-        {/* Driver mini card */}
         <View style={styles.driverMini}>
-          <Avatar initials={d.initials} bg={d.avatarBg!} size={40} photoUrl={d.photoUrl} />
+          <Avatar initials={driverInitials} bg={driver?.avatarBg || '#1E293B'} size={40} photoUrl={driver?.photoUrl} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.driverName}>{d.name}</Text>
-            <Text style={styles.driverVehicle}>{d.vehicle} · {d.plateNumber}</Text>
+            <Text style={styles.driverName}>{driverName}</Text>
+            <Text style={styles.driverVehicle}>{driver?.vehicle || 'Vehicle'}{driver?.plateNumber ? ` · ${driver.plateNumber}` : ''}</Text>
           </View>
         </View>
 

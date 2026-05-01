@@ -1,12 +1,22 @@
 import { client, databases, databaseId, COLLECTIONS } from '@/src/services/appwrite';
 import type { DriverAssignment, DriverLocationRecord } from '@/src/types';
 
+function safeSubscribe(channel: string, callback: (event: any) => void): () => void {
+  try {
+    const unsubscribe = client.subscribe(channel, callback);
+    return typeof unsubscribe === 'function' ? unsubscribe : () => {};
+  } catch (err) {
+    console.warn('Realtime subscribe failed (WebSocket may be disconnected):', err);
+    return () => {};
+  }
+}
+
 export const subscribeToRide = (
   rideId: string,
   onDriverAssigned: (driver: DriverAssignment | null) => void
 ) => {
   const channel = `databases.${databaseId}.collections.${COLLECTIONS.RIDES}.documents.${rideId}`;
-  const unsubscribe = client.subscribe(channel, async () => {
+  return safeSubscribe(channel, async () => {
     try {
       const ride = await databases.getDocument({
         databaseId,
@@ -55,8 +65,6 @@ export const subscribeToRide = (
       console.error('Ride realtime refresh failed:', error);
     }
   });
-
-  return typeof unsubscribe === 'function' ? unsubscribe : () => {};
 };
 
 export const subscribeToDriverLocation = (
@@ -64,7 +72,7 @@ export const subscribeToDriverLocation = (
   onLocation: (location: DriverLocationRecord) => void
 ) => {
   const channel = `databases.${databaseId}.collections.${COLLECTIONS.DRIVER_LOCATIONS}.documents.${driverId}`;
-  const unsubscribe = client.subscribe(channel, (event: any) => {
+  return safeSubscribe(channel, (event: any) => {
     const payload = event.payload;
     if (!payload) return;
 
@@ -84,6 +92,4 @@ export const subscribeToDriverLocation = (
       updatedAt: String(payload.updatedAt || new Date().toISOString()),
     });
   });
-
-  return typeof unsubscribe === 'function' ? unsubscribe : () => {};
 };

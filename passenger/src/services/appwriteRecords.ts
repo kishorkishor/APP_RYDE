@@ -315,3 +315,12 @@ export const listRideHistory = async (riderId: string): Promise<TripRecord[]> =>
     driverName: ride.driverId || 'Pending assignment',
   }));
 };
+
+export const cancelRide = async (rideId: string): Promise<void> => {
+  await databases.updateDocument({
+    databaseId,
+    collectionId: COLLECTIONS.RIDES,
+    documentId: rideId,
+    data: { status: 'cancelled', adminStatus: 'cancelled' },
+  });
+};
