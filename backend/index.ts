@@ -1,16 +1,25 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import pinoHttp from 'pino-http';
 import { Query, ID, Permission, Role } from 'node-appwrite';
 import { databases, databaseId, COLLECTIONS } from './appwrite';
+import { initSentry, setupSentryErrorHandler } from './sentry';
+import logger from './logger';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
+initSentry();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Middleware
+// Enable if behind a reverse proxy (nginx, load balancer)
+// app.set('trust proxy', 1);
+
 app.use(express.json());
+app.use(helmet());
 
 // CORS Configuration
 const allowedOrigins = process.env.ADMIN_ALLOWED_ORIGINS?.split(',') || [
@@ -30,8 +39,27 @@ app.use(cors({
   }
 }));
 
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 100,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later' },
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts, please try again later' },
+});
+
+app.use(generalLimiter);
+app.use(pinoHttp({ logger }));
+
 const logRouteError = (label: string, err: unknown) => {
-  console.error(label, err);
+  logger.error({ err }, label);
 };
 
 const errorResponse = (res: Response, status: number, error: string) =>
@@ -109,7 +137,7 @@ const autoCompleteStaleRide = async (ride: any) => {
     if (ride.driverId) {
       await updateDriverCurrentRide(String(ride.driverId), '');
     }
-    console.log(`[cleanup] Auto-completed stale ride ${ride.$id}`);
+    logger.info({ rideId: ride.$id }, 'Auto-completed stale ride');
   } catch (err) {
     logRouteError(`Failed to auto-complete stale ride ${ride.$id}`, err);
   }
@@ -177,7 +205,7 @@ const deriveAvailability = (
   return 'available';
 };
 
-app.post('/auth/login', (req: Request, res: Response) => {
+app.post('/auth/login', authLimiter, (req: Request, res: Response) => {
   const { email, password } = req.body || {};
   const adminEmail = process.env.ADMIN_EMAIL;
   if (!adminEmail) {
@@ -212,7 +240,7 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const adminToken = process.env.ADMIN_API_TOKEN;
 
   if (!adminToken) {
-    console.error('⚠️ ADMIN_API_TOKEN is not set in environment variables');
+    logger.error('ADMIN_API_TOKEN is not set in environment variables');
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
@@ -226,18 +254,19 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
 // 1. Health Check
 app.get('/health', async (req: Request, res: Response) => {
   try {
-    // Check Appwrite connectivity
     await databases.listCollections(databaseId, [Query.limit(1)]);
     res.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
-      appwrite: 'connected'
+      uptime: process.uptime(),
+      appwrite: 'connected',
     });
   } catch (err: any) {
     logRouteError('Health check failed', err);
-    res.status(500).json({
+    res.status(503).json({
       status: 'error',
-      appwrite: 'disconnected'
+      timestamp: new Date().toISOString(),
+      appwrite: 'disconnected',
     });
   }
 });
@@ -610,7 +639,8 @@ app.patch('/vehicle-classes/:id', async (req: Request, res: Response) => {
   }
 });
 
-// Start Server
+setupSentryErrorHandler(app);
+
 app.listen(port, () => {
-  console.log(`🚀 VELO Admin Backend running at http://localhost:${port}`);
+  logger.info({ port }, 'RYDE Admin Backend running');
 });
