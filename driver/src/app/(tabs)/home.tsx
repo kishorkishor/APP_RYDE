@@ -108,6 +108,22 @@ export default function HomeScreen() {
     };
   }, [fetchRides]);
 
+  // Auto-navigate to active-ride screen when an in-progress ride is detected
+  // (e.g. app restarted with a ride still running).
+  const resumedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const storeActive = useDriverRideStore.getState().activeRide;
+    if (!storeActive) return;
+    const progress = (storeActive.driverProgress ?? '').trim();
+    const isInProgress =
+      storeActive.status === 'in_progress' ||
+      ['heading_pickup', 'arrived', 'picked_up'].includes(progress);
+    if (isInProgress && resumedRef.current !== storeActive.id) {
+      resumedRef.current = storeActive.id;
+      router.push('/(trip)/active-ride');
+    }
+  }, [assignedRides]);
+
   // Show incoming-ride confirmation screen when a NEW ride is assigned.
   const shownIncomingRef = useRef<string | null>(null);
   useEffect(() => {
@@ -161,8 +177,9 @@ export default function HomeScreen() {
       .join('')
       .toUpperCase() || 'D';
 
+  const ACTIVE_PROGRESS = new Set(['heading_pickup', 'arrived', 'picked_up', 'in_progress']);
   const activeRide = assignedRides.find(
-    (r) => r.driverProgress === 'heading_pickup' || r.status === 'in_progress'
+    (r) => r.status === 'in_progress' || ACTIVE_PROGRESS.has(r.driverProgress ?? '')
   );
 
   return (

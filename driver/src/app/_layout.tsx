@@ -13,7 +13,26 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 import * as SystemUI from 'expo-system-ui';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, LogBox } from 'react-native';
+
+// Suppress LogBox warnings and known non-critical errors in dev
+if (__DEV__) {
+  LogBox.ignoreAllLogs(true);
+
+  // Suppress WebSocket INVALID_STATE_ERR (Appwrite SDK heartbeat on stale connection)
+  // and Firebase init errors (FCM not configured yet) — both are non-fatal in dev.
+  const originalHandler = (globalThis as any).ErrorUtils?.getGlobalHandler?.();
+  (globalThis as any).ErrorUtils?.setGlobalHandler?.((error: any, isFatal: boolean) => {
+    const msg = String(error?.message || error || '');
+    if (
+      msg.includes('INVALID_STATE_ERR') ||
+      msg.includes('FirebaseApp is not initialized')
+    ) {
+      return;
+    }
+    originalHandler?.(error, isFatal);
+  });
+}
 import { ToastProvider, OfflineBanner } from '@/src/components/ui';
 import { useNetworkListener } from '@/src/hooks/useNetworkListener';
 import { usePushNotifications } from '@/src/hooks/usePushNotifications';

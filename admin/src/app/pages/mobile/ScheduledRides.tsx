@@ -2,11 +2,11 @@ import { useNavigate } from "react-router";
 import { Badge } from "../../components/ui/badge";
 import { Clock, MapPin, User } from "lucide-react";
 import { format } from "date-fns";
-import { useAdminData } from "../../hooks/useAdminData";
+import { useAdminDataContext } from "../../context/AdminDataContext";
 
 export function MobileScheduledRides() {
   const navigate = useNavigate();
-  const { rides, loading, error } = useAdminData();
+  const { rides, loading, error } = useAdminDataContext();
 
   const scheduledRides = rides.filter(
     (r) =>

@@ -4,12 +4,12 @@ import { Badge } from "../../components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { ArrowLeft, Phone, MapPin, Clock, User, DollarSign } from "lucide-react";
 import { format } from "date-fns";
-import { useAdminData } from "../../hooks/useAdminData";
+import { useAdminDataContext } from "../../context/AdminDataContext";
 
 export function MobileRideDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { rides, drivers, loading, error } = useAdminData();
+  const { rides, drivers, loading, error } = useAdminDataContext();
 
   const ride = rides.find((r) => r.id === id);
 

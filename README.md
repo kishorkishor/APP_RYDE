@@ -1,15 +1,15 @@
 # RYDE - Premium Ride-Hailing Platform
 
-Multi-app ride-hailing system for Riyadh, Saudi Arabia. Connects passengers with drivers through an admin-dispatched model.
+Admin-dispatched ride-hailing system for Riyadh, Saudi Arabia. Admins assign rides to online drivers — drivers don't choose rides.
 
 ## Repo Structure
 
 ```
-driver/      - Driver mobile app (Expo/React Native)
-passenger/   - Passenger mobile app (Expo/React Native)
-admin/       - Admin dispatch panel (React + Vite + Tailwind)
-backend/     - REST API (Express + Appwrite)
-docs/        - Architecture and API documentation
+driver/      Expo React Native — driver mobile app (Android APK)
+passenger/   Expo React Native — passenger mobile app
+admin/       React + Vite + Tailwind — admin dispatch panel (Netlify)
+backend/     Express + TypeScript — REST API (Appwrite backend)
+docs/        Architecture and API documentation
 ```
 
 ## Tech Stack
@@ -17,55 +17,45 @@ docs/        - Architecture and API documentation
 | Component | Stack |
 |-----------|-------|
 | Driver app | Expo 54, React Native, Appwrite SDK, Zustand, MapLibre |
-| Passenger app | Expo, React Native, Appwrite SDK, Zustand |
+| Passenger app | Expo, React Native, Appwrite SDK, Zustand, MapLibre |
 | Admin panel | React 19, Vite, Tailwind CSS, shadcn/ui |
 | Backend | Express, TypeScript, node-appwrite SDK |
-| Database | Appwrite Cloud (collections: rides, profiles, ride_events, vehicle_classes, driver_locations) |
-| Hosting | Admin on Netlify (riyadh-admin.netlify.app), Backend self-hosted |
+| Database | Appwrite Cloud |
+| Admin hosting | Netlify — riyadh-admin.netlify.app |
 
 ## Quick Start
 
-### Backend
+`.env` files are already set up locally. If cloning fresh, copy from `.env.example` and fill in values.
+
 ```bash
-cd backend
-cp .env.example .env   # fill in Appwrite credentials
-npm install
-npx ts-node index.ts
+# 1. Backend (must run first)
+cd backend && npm install && npx ts-node index.ts
+
+# 2. Admin panel
+cd admin && npm install && npm run dev
+
+# 3. Driver app
+cd driver && npm install && npx expo start
+
+# 4. Passenger app
+cd passenger && npm install && npx expo start
 ```
 
-### Admin Panel
-```bash
-cd admin
-cp .env.example .env   # set VITE_ADMIN_API_BASE_URL
-npm install
-npm run dev            # http://localhost:5173
-```
-
-### Driver App
-```bash
-cd driver
-npm install
-npx expo start
-# or build APK:
-cd android && ./gradlew assembleRelease
-```
-
-### Passenger App
-```bash
-cd passenger
-npm install
-npx expo start
-```
-
-## Assignment Lifecycle
+## Assignment Flow
 
 ```
-Driver Online -> Admin Assigns -> Driver Gets Popup -> Driver Starts ->
-En Route -> Arrived -> Picked Up -> In Progress -> Dropped Off -> Completed
+Passenger requests → Admin assigns driver → Driver gets mandatory popup →
+Start Ride → En Route → Arrived → Picked Up → In Progress → Dropped Off → Completed
 ```
 
-See [docs/ASSIGNMENT_FLOW.md](docs/ASSIGNMENT_FLOW.md) for full details.
+See [docs/ASSIGNMENT_FLOW.md](docs/ASSIGNMENT_FLOW.md) for the full lifecycle.
 
-## Environment Variables
+## Docs
 
-See [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md) for all required variables. Never commit real keys — use `.env.example` files as templates.
+- [Assignment Flow](docs/ASSIGNMENT_FLOW.md) — ride lifecycle and status fields
+- [API Reference](docs/API.md) — all backend endpoints
+- [Environment Variables](docs/ENVIRONMENT.md) — what each `.env` file needs
+
+## For AI Agents
+
+Read `CLAUDE.md` and `AI_CONTEXT.md` at the repo root before making changes.

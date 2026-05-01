@@ -43,12 +43,13 @@ export const useDriverRideStore = create<DriverRideStore>()((set) => ({
 
   setAssignedRides: (assignedRides) => {
     cacheAssignedRides(assignedRides);
+    const ACTIVE_PROGRESS = new Set(['heading_pickup', 'arrived', 'picked_up', 'in_progress']);
     set((state) => {
       if (state.activeRide) {
         return { assignedRides };
       }
       const found = assignedRides.find(
-        (r) => r.status === 'in_progress' || r.driverProgress === 'heading_pickup'
+        (r) => r.status === 'in_progress' || ACTIVE_PROGRESS.has(r.driverProgress ?? '')
       );
       return { assignedRides, activeRide: found ?? null };
     });

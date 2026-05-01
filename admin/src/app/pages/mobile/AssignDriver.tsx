@@ -4,7 +4,7 @@ import { type Driver } from "../../data/mockData";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { ArrowLeft, User, Car, MapPin } from "lucide-react";
-import { useAdminData } from "../../hooks/useAdminData";
+import { useAdminDataContext } from "../../context/AdminDataContext";
 import { ApiError, assignRideDriver } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 
@@ -12,7 +12,7 @@ export function MobileAssignDriver() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { rides, drivers, loading, error, refreshDrivers, patchDriver } = useAdminData();
+  const { rides, drivers, loading, error, refreshDrivers, patchDriver } = useAdminDataContext();
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");

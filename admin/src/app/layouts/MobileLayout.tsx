@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation } from "react-router";
 import { Clock, Calendar, Users, Car } from "lucide-react";
 import { BrandMark } from "../components/BrandMark";
+import { AdminDataProvider } from "../context/AdminDataContext";
 
 export function MobileLayout() {
   const location = useLocation();
@@ -18,7 +19,9 @@ export function MobileLayout() {
       </header>
 
       <main className="flex-1 overflow-auto">
-        <Outlet />
+        <AdminDataProvider>
+          <Outlet />
+        </AdminDataProvider>
       </main>
 
       <nav className="bg-white border-t border-gray-200 grid grid-cols-4 p-2">

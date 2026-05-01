@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { type Ride, type Driver } from "../data/mockData";
 import { ApiError, assignRideDriver, unassignRideDriver, updateRideStatus } from "../services/api";
 import { useAuth } from "../context/AuthContext";
-import { useAdminData } from "../hooks/useAdminData";
+import { useAdminDataContext } from "../context/AdminDataContext";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
@@ -108,7 +108,7 @@ function mapAssignError(err: unknown): string {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function DispatchBoard() {
   const { user } = useAuth();
-  const { rides, drivers, loading, error: adminError, reload, refreshDrivers, patchDriver } = useAdminData();
+  const { rides, drivers, loading, error: adminError, reload, refreshDrivers, patchDriver } = useAdminDataContext();
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");

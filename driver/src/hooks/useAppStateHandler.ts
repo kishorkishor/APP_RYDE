@@ -5,6 +5,7 @@ import { useDriverRideStore } from '@/src/store/useDriverRideStore';
 import { useDriverStatusStore } from '@/src/store/useDriverStatusStore';
 import { getCurrentDriverProfile, listAssignedRides } from '@/src/services/driverRecords';
 import { reconnectSubscriptions } from '@/src/services/realtime';
+import { getCachedActiveRide } from '@/src/services/rideCache';
 
 export function useAppStateHandler() {
   const previousState = useRef<AppStateStatus>(AppState.currentState);
@@ -36,6 +37,16 @@ export function useAppStateHandler() {
           useDriverRideStore.getState().setAssignedRides(rides);
         } catch {
           // best-effort
+        }
+
+        // Restore active ride from cache if the store lost it
+        if (!useDriverRideStore.getState().activeRide) {
+          try {
+            const cached = await getCachedActiveRide();
+            if (cached && cached.status !== 'completed' && cached.status !== 'cancelled') {
+              useDriverRideStore.getState().setActiveRide(cached);
+            }
+          } catch {}
         }
 
         reconnectSubscriptions();

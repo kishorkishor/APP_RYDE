@@ -3,11 +3,11 @@ import { type VehicleClass } from "../../data/mockData";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Car, Plus, Minus } from "lucide-react";
-import { useAdminData } from "../../hooks/useAdminData";
+import { useAdminDataContext } from "../../context/AdminDataContext";
 import { updateVehicleClass } from "../../services/api";
 
 export function MobileVehicleAvailability() {
-  const { vehicleClasses: loadedVehicleClasses, loading, error } = useAdminData();
+  const { vehicleClasses: loadedVehicleClasses, loading, error } = useAdminDataContext();
   const [vehicleClasses, setVehicleClasses] = useState<VehicleClass[]>([]);
   const [saveError, setSaveError] = useState("");
 

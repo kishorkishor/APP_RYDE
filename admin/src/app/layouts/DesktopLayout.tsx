@@ -2,6 +2,7 @@ import { Outlet, Link, useLocation } from "react-router";
 import { Radio, Car, Users, Receipt, FileText, Settings, LogOut, Sun, Moon, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
+import { AdminDataProvider } from "../context/AdminDataContext";
 import { useState } from "react";
 import { BrandMark } from "../components/BrandMark";
 
@@ -89,7 +90,9 @@ export function DesktopLayout() {
       </aside>
 
       <main className="flex-1 overflow-hidden">
-        <Outlet />
+        <AdminDataProvider>
+          <Outlet />
+        </AdminDataProvider>
       </main>
     </div>
   );

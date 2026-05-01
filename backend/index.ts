@@ -413,6 +413,7 @@ app.patch('/rides/:rideId/unassign-driver', async (req: Request, res: Response) 
       driverName: '',
       driverPhone: '',
       vehicleLabel: '',
+      driverProgress: '',
       status: 'confirmed',
       adminStatus: 'confirmed',
     });

@@ -24,6 +24,7 @@ import {
 } from '@/src/services/driverRecords';
 import { useToastStore } from '@/src/store/useToastStore';
 import { subscribeToRideDocument } from '@/src/services/realtime';
+import { databases, databaseId, COLLECTIONS } from '@/src/services/appwrite';
 import { fetchRoute } from '@/src/services/routing';
 import { useGeofenceArrival } from '@/src/hooks/useGeofenceArrival';
 
@@ -100,11 +101,24 @@ export default function ActiveRideScreen() {
       const current = useDriverRideStore.getState().activeRide;
       if (!current) return;
       const status = String(payload.status || '');
-      if (status === 'cancelled') {
+
+      // Detect cancellation or admin unassignment (driverId cleared / changed)
+      const wasCancelled = status === 'cancelled';
+      const wasUnassigned =
+        profile?.id &&
+        payload.driverId !== undefined &&
+        payload.driverId !== profile.id;
+
+      if (wasCancelled || wasUnassigned) {
         clearActiveRide();
+        useToastStore.getState().showToast(
+          wasCancelled ? 'Ride was cancelled' : 'You have been unassigned from this ride',
+          'info',
+        );
         router.replace('/(tabs)/home');
         return;
       }
+
       setActiveRide({
         ...current,
         status: status || current.status,
@@ -115,6 +129,50 @@ export default function ActiveRideScreen() {
     });
     return () => unsubscribe();
   }, [activeRide?.id]);
+
+  // Polling fallback: check ride status every 15s in case the WebSocket is dead
+  // (handles INVALID_STATE_ERR after force-stop/background cycles)
+  useEffect(() => {
+    if (!activeRide?.id || !profile?.id) return;
+    const interval = setInterval(async () => {
+      try {
+        const doc = await databases.getDocument(
+          databaseId,
+          COLLECTIONS.RIDES,
+          activeRide.id,
+        );
+        const status = String(doc.status || '');
+        const driverId = String(doc.driverId || '');
+
+        if (status === 'cancelled' || (driverId !== profile!.id)) {
+          clearActiveRide();
+          useToastStore.getState().showToast(
+            status === 'cancelled'
+              ? 'Ride was cancelled'
+              : 'You have been unassigned from this ride',
+            'info',
+          );
+          router.replace('/(tabs)/home');
+          return;
+        }
+
+        // Sync latest server state into the store
+        const current = useDriverRideStore.getState().activeRide;
+        if (current) {
+          setActiveRide({
+            ...current,
+            status: status || current.status,
+            adminStatus: doc.adminStatus ?? current.adminStatus,
+            driverProgress: doc.driverProgress ?? current.driverProgress,
+            passengerVerified: doc.passengerVerified ?? current.passengerVerified,
+          });
+        }
+      } catch {
+        // best-effort — network may be down
+      }
+    }, 15_000);
+    return () => clearInterval(interval);
+  }, [activeRide?.id, profile?.id]);
 
   // Auto-fetch route on ride / step change. Fall back to a straight line if
   // OSRM is unreachable so the user always sees something.

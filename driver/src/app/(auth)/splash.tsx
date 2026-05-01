@@ -3,9 +3,11 @@ import { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { DT } from '@/src/theme/tokens';
-import { getCurrentDriverProfile } from '@/src/services/driverRecords';
+import { getCurrentDriverProfile, listAssignedRides } from '@/src/services/driverRecords';
 import { useDriverAuthStore } from '@/src/store/useDriverAuthStore';
 import { useDriverStatusStore } from '@/src/store/useDriverStatusStore';
+import { useDriverRideStore } from '@/src/store/useDriverRideStore';
+import { getCachedActiveRide } from '@/src/services/rideCache';
 
 const RYDE_LOGO = require('../../../assets/ryde-logo.png');
 
@@ -51,8 +53,32 @@ export default function SplashScreen() {
           // Sync online/offline state from persisted Appwrite profile
           const { setOnline, setOffline } = useDriverStatusStore.getState();
           if (profile.isOnline) { setOnline(); } else { setOffline(); }
-          // Short delay so splash is visible
-          setTimeout(() => router.replace('/(tabs)/home'), 600);
+
+          // Restore active ride: check cache first, then fall back to API
+          let resumed = false;
+          try {
+            const cached = await getCachedActiveRide();
+            if (cached && cached.status !== 'completed' && cached.status !== 'cancelled') {
+              useDriverRideStore.getState().setActiveRide(cached);
+              resumed = true;
+            }
+          } catch {}
+
+          if (!resumed) {
+            try {
+              const rides = await listAssignedRides(profile.id);
+              useDriverRideStore.getState().setAssignedRides(rides);
+              resumed = !!useDriverRideStore.getState().activeRide;
+            } catch {}
+          }
+
+          setTimeout(() => {
+            if (resumed) {
+              router.replace('/(trip)/active-ride');
+            } else {
+              router.replace('/(tabs)/home');
+            }
+          }, 600);
         } else {
           setLoading(false);
           setTimeout(() => router.replace('/(auth)/login'), 1200);

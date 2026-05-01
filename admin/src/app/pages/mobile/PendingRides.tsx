@@ -2,11 +2,11 @@ import { useNavigate } from "react-router";
 import { Badge } from "../../components/ui/badge";
 import { Clock, MapPin, Phone } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { useAdminData } from "../../hooks/useAdminData";
+import { useAdminDataContext } from "../../context/AdminDataContext";
 
 export function MobilePendingRides() {
   const navigate = useNavigate();
-  const { rides, loading, error } = useAdminData();
+  const { rides, loading, error } = useAdminDataContext();
 
   const pendingRides = rides.filter(
     (r) => r.status === "pending" || r.status === "calling"

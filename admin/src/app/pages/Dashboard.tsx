@@ -16,13 +16,13 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/table";
-import { useAdminData } from "../hooks/useAdminData";
+import { useAdminDataContext } from "../context/AdminDataContext";
 import { Clock, Calendar, CheckCircle2, XCircle, Users, Car, Filter, Loader2 } from "lucide-react";
 import { formatDistanceToNow, format, isToday, differenceInMinutes } from "date-fns";
 import type { Ride } from "../data/mockData";
 
 export function Dashboard() {
-  const { rides, drivers, vehicleClasses, loading, error } = useAdminData();
+  const { rides, drivers, vehicleClasses, loading, error } = useAdminDataContext();
 
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [companyFilter, setCompanyFilter] = useState<string>("all");

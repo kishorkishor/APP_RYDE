@@ -1,9 +1,9 @@
 import { Badge } from "../../components/ui/badge";
 import { Phone, Car, MapPin } from "lucide-react";
-import { useAdminData } from "../../hooks/useAdminData";
+import { useAdminDataContext } from "../../context/AdminDataContext";
 
 export function MobileDriverList() {
-  const { drivers, loading, error } = useAdminData();
+  const { drivers, loading, error } = useAdminDataContext();
 
   return (
     <div className="p-4 space-y-3">

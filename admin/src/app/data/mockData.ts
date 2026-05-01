@@ -17,6 +17,8 @@ export interface Ride {
   paymentNotes?: string;
   internalNotes?: string;
   callStatus?: string;
+  completedAt?: Date;
+  driverName?: string;
   events: RideEvent[];
 }
 

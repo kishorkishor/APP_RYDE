@@ -148,6 +148,7 @@ function mapRideEvent(doc: AppwriteDocument): RideEvent {
 }
 
 function mapRide(doc: AppwriteDocument, events: RideEvent[] = []): Ride {
+  const completedAtStr = asString(doc.completedAt);
   return {
     id: doc.$id,
     passengerName: asString(doc.passengerName, "Passenger"),
@@ -164,6 +165,8 @@ function mapRide(doc: AppwriteDocument, events: RideEvent[] = []): Ride {
     assignedDriver: asString(doc.driverId) || undefined,
     billingStatus: doc.status === "completed" ? "not_reviewed" : "not_reviewed",
     amount: asNumber(doc.fareAmount, undefined as unknown as number),
+    completedAt: completedAtStr ? parseDate(completedAtStr) : undefined,
+    driverName: asString(doc.driverName) || undefined,
     events,
   };
 }

@@ -11,8 +11,14 @@ type ActiveSub = {
 const activeSubs: ActiveSub[] = [];
 
 function safeSubscribe(channel: string, handler: (response: any) => void): () => void {
-  const unsub = client.subscribe(channel, handler);
-  return typeof unsub === 'function' ? unsub : () => {};
+  try {
+    const unsub = client.subscribe(channel, handler);
+    return typeof unsub === 'function' ? unsub : () => {};
+  } catch {
+    // WebSocket may be in a bad state (INVALID_STATE_ERR) after app
+    // background/foreground cycles. Return a no-op unsubscribe.
+    return () => {};
+  }
 }
 
 export const pauseAllSubscriptions = () => {
@@ -21,6 +27,7 @@ export const pauseAllSubscriptions = () => {
 
 export const reconnectSubscriptions = () => {
   activeSubs.forEach((s) => {
+    try { s.currentUnsub(); } catch {}
     s.currentUnsub = safeSubscribe(s.channel, s.handler);
   });
 };

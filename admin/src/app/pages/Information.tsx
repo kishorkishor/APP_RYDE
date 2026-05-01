@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useAdminData } from "../hooks/useAdminData";
+import { useAdminDataContext } from "../context/AdminDataContext";
 import { FileText, Search, Download, ChevronLeft, ChevronRight } from "lucide-react";
 
 const PAGE_SIZE = 25;
@@ -15,12 +15,12 @@ function formatTime(date: Date): string {
 }
 
 export function Information() {
-  const { rides, loading, error } = useAdminData();
+  const { rides, loading, error } = useAdminDataContext();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
 
   const rows = useMemo(() => {
-    const filtered = search.trim()
+    const base = search.trim()
       ? rides.filter(
           (r) =>
             r.passengerName.toLowerCase().includes(search.toLowerCase()) ||
@@ -29,6 +29,13 @@ export function Information() {
             r.destination.toLowerCase().includes(search.toLowerCase())
         )
       : rides;
+
+    // Sort: completed/cancelled rides by completedAt (newest first), then others by requestTime
+    const filtered = [...base].sort((a, b) => {
+      const aTime = a.completedAt?.getTime() ?? a.requestTime.getTime();
+      const bTime = b.completedAt?.getTime() ?? b.requestTime.getTime();
+      return bTime - aTime;
+    });
 
     return filtered.map((r, idx) => {
       const requestedAt = r.requestTime;
@@ -43,7 +50,7 @@ export function Information() {
         pickup: r.pickupLocation,
         dropoff: r.destination,
         actualPickupTime: formatTime(scheduled),
-        dropoffTime: r.status === "completed" ? formatTime(new Date(scheduled.getTime() + (r.amount ? r.amount * 60000 : 30 * 60000))) : "-",
+        dropoffTime: r.completedAt ? formatTime(r.completedAt) : "-",
         waitingTime: diff > 0 ? `${diff} min` : "-",
         status: r.status,
       };
