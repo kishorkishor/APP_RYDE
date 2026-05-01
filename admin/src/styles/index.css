@@ -1,0 +1,20 @@
+@import './fonts.css';
+@import './tailwind.css';
+@import './theme.css';
+
+/* Urgent unassigned ride — blinking red row */
+@keyframes blink-row {
+  0%, 100% { background-color: rgb(254 202 202 / 0.7); }
+  50%       { background-color: rgb(254 226 226 / 0.2); }
+}
+@keyframes blink-row-dark {
+  0%, 100% { background-color: rgb(153 27 27 / 0.35); }
+  50%       { background-color: rgb(127 29 29 / 0.08); }
+}
+
+.blink-row {
+  animation: blink-row 1.4s ease-in-out infinite;
+}
+html.dark .blink-row {
+  animation: blink-row-dark 1.4s ease-in-out infinite;
+}

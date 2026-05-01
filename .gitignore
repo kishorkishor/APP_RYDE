@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+*.apk
+*.aab
+*.ipa
+
+# Expo
+.expo/
+*.jsbundle
+
+# Android build
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+
+# Environment secrets
+.env
+.env.local
+.env.production
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+*.err.log
+
+# Claude Code
+.claude/
+
+# Netlify
+.netlify/
+
+# Sentry
+.sentryclirc

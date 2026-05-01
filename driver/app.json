@@ -1,0 +1,59 @@
+{
+  "expo": {
+    "name": "RYDE",
+    "slug": "ryde-driver",
+    "scheme": "ryde-driver",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0B0F"
+    },
+    "notification": {
+      "color": "#22C55E"
+    },
+    "ios": {
+      "bundleIdentifier": "com.ryde.driver",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "RYDE needs your location to navigate to pickup and drop-off points.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "RYDE uses background location to share your position with passengers during active rides.",
+        "UIBackgroundModes": ["location", "remote-notification"]
+      },
+      "entitlements": {
+        "aps-environment": "production"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A0B0F"
+      },
+      "package": "com.ryde.driver",
+      "useNextNotificationsApi": true
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-location",
+      "expo-notifications",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#0A0B0F"
+        }
+      ],
+      "@maplibre/maplibre-react-native",
+      "@sentry/react-native"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

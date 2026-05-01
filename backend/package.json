@@ -1,0 +1,26 @@
+{
+  "name": "velo-admin-backend",
+  "version": "1.0.0",
+  "description": "Admin backend for VELO ride-hailing application",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "ts-node index.ts",
+    "build": "tsc",
+    "repair:ride-permissions": "ts-node repair-assigned-ride-permissions.ts",
+    "migrate:admin-schema": "ts-node migrate-admin-schema.ts"
+  },
+  "dependencies": {
+    "express": "^4.21.1",
+    "cors": "^2.8.5",
+    "node-appwrite": "^24.0.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "@types/node": "^22.7.5",
+    "@types/express": "^5.0.0",
+    "@types/cors": "^2.8.17",
+    "ts-node": "^10.9.2"
+  }
+}
